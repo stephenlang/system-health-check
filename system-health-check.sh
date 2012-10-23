@@ -147,13 +147,13 @@ if [ $replication_check = on ]; then
 		ok=0
 	fi
 
-	if [ $Slave_SQL_Running == 'No' ] ; then
+	if [ '$Slave_SQL_Running' = 'No' ] ; then
        		echo "CRITICAL : Replication SQL thread not running on server `hostname -s`!" >> $status_page
         	echo "Last Error: $Last_error" >> $status_page
 		ok=0
 	fi
 
-	if [ $Slave_IO_Running == 'No' ] ; then
+	if [ '$Slave_IO_Running' = 'No' ] ; then
         	echo "CRITICAL : Replication LOG IO thread not running on server `hostname -s`!" >> $status_page
         	echo "Last Error:" $Last_error >> $status_page
 		ok=0
