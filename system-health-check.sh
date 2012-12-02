@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # system-health-check.sh
-# Server monitoring for CPU, memory, swap, process, storage, and more
+# Server monitoring for Memory, swap, process, storage, and more
 # Copyright (c) 2012, Stephen Lang
 # All rights reserved.
 #
@@ -59,19 +59,41 @@ load_threshold=10
 storage_threshold=80
 
 
-# Logging Metrics
+# Logging Metrics - Linux
 
-cpu=`vmstat 1 2 | tail -1 | awk '{print $13,$14,$15}'`
-load=`/usr/bin/uptime | awk -F'load average:' '{ print $2}'`
+if [ `uname` = Linux ]; then
+
 load_alarm=`/usr/bin/uptime | awk -F'load average:' '{ print $2}' | sed 's/\./ /g' | awk '{print $1}'`
 memory_alarm=`/usr/bin/free -m | grep Mem | awk '{print $3/$2 * 100.0}' | cut -d\. -f1`
 swap_alarm=`/usr/bin/free -m | grep Swap | awk '{print $3/$2 * 100.0}' | cut -d\. -f1`
-disk_alarm=`/bin/df -h | grep -v shm  | tail -1 |awk '{print $5}' | sed -e 's/\%//g'`
-diskused=`/bin/df -h | grep -v shm | tail -1 | awk '{print $3}'`
-diskmax=`/bin/df -h |grep -v shm | tail -1 | awk '{print $2}'` 
 Slave_IO_Running=`/usr/bin/mysql -Bse "show slave status\G" | grep Slave_IO_Running | awk '{ print $2 }'`
 Slave_SQL_Running=`/usr/bin/mysql -Bse "show slave status\G" | grep Slave_SQL_Running | awk '{ print $2 }'`
 Last_error=`/usr/bin/mysql -Bse "show slave status\G" | grep Last_error | awk -F \: '{ print $2 }'`
+
+
+# Logging Metrics - FreeBSD
+
+elif [ `uname` = FreeBSD ]; then
+
+if [ ! -f `which bc` ]; then
+	echo "Please install bc, or disable memory check"
+	exit
+fi
+
+load_alarm=`/usr/bin/uptime | awk -F'load averages:' '{ print $2}' | sed 's/\./ /g' | awk '{print $1}'`
+memory_physmem=`/sbin/sysctl -n hw.physmem`
+memory_active=`/sbin/sysctl -n vm.stats.vm.v_active_count`
+memory_pagesize=`/sbin/sysctl -n hw.pagesize`
+memory_alarm=`echo "($memory_active * $memory_pagesize / 1024) / ($memory_physmem / 1024) * 100" |bc -l |cut -d\. -f1`
+swap_alarm=`/usr/sbin/swapinfo -h | grep -v Device | awk '{print $5}' | sed -e 's/\%//g'`
+Slave_IO_Running=`/usr/local/bin/mysql -Bse "show slave status\G" | grep Slave_IO_Running | awk '{ print $2 }'`
+Slave_SQL_Running=`/usr/local/bin/mysql -Bse "show slave status\G" | grep Slave_SQL_Running | awk '{ print $2 }'`
+Last_error=`/usr/local/bin/mysql -Bse "show slave status\G" | grep Last_error | awk -F \: '{ print $2 }'`
+
+else
+	echo "Cannot detect OS version!  Exit"
+	exit
+fi
 
 
 # Clear status page and initialize variable
