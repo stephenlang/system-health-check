@@ -36,6 +36,7 @@ monitoring servers IP addresses if they are known.
 - Storage Check
 - Process Check
 - Replication Check
+- HTTP Content Check
 
 
 ### Configuration
@@ -52,6 +53,7 @@ The currently configurable options and thresholds are listed below:
 	storage_check=on
 	process_check=on
 	replication_check=off
+	http_content_check=off
 
 	# Configure partitions for storage check
 	partitions=( / )

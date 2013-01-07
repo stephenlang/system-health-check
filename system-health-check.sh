@@ -42,6 +42,7 @@ load_check=on
 storage_check=on
 process_check=on
 replication_check=off
+http_content_check=off
 
 
 # Configure partitions for storage check
@@ -50,6 +51,11 @@ partitions=( / )
 
 # Configure process(es) to check
 process_names=( httpd mysqld postfix )
+
+
+# Configure HTTP Content Check
+site=www.example.com
+search_string="CHANGEME"
 
 
 # Configure Thresholds
@@ -69,6 +75,7 @@ swap_alarm=`/usr/bin/free -m | grep Swap | awk '{print $3/$2 * 100.0}' | cut -d\
 Slave_IO_Running=`/usr/bin/mysql -Bse "show slave status\G" | grep Slave_IO_Running | awk '{ print $2 }'`
 Slave_SQL_Running=`/usr/bin/mysql -Bse "show slave status\G" | grep Slave_SQL_Running | awk '{ print $2 }'`
 Last_error=`/usr/bin/mysql -Bse "show slave status\G" | grep Last_error | awk -F \: '{ print $2 }'`
+http_content_check_alarm=`/usr/bin/curl -sLH "host: $site" localhost | grep "$search_string" |wc -l`
 
 
 # Logging Metrics - FreeBSD
@@ -89,6 +96,8 @@ swap_alarm=`/usr/sbin/swapinfo -h | grep -v Device | awk '{print $5}' | sed -e '
 Slave_IO_Running=`/usr/local/bin/mysql -Bse "show slave status\G" | grep Slave_IO_Running | awk '{ print $2 }'`
 Slave_SQL_Running=`/usr/local/bin/mysql -Bse "show slave status\G" | grep Slave_SQL_Running | awk '{ print $2 }'`
 Last_error=`/usr/local/bin/mysql -Bse "show slave status\G" | grep Last_error | awk -F \: '{ print $2 }'`
+http_content_check_alarm=`/usr/local/bin/curl -sLH "host: $site" localhost | grep "$search_string" |wc -l`
+
 
 else
 	echo "Cannot detect OS version!  Exit"
@@ -182,6 +191,17 @@ if [ $replication_check = on ]; then
 	fi
 fi
 
+
+# HTTP Content Check
+
+if [ $http_content_check = on ]; then
+
+        if [ ! $http_content_check_alarm -ge '1' ]; then
+                echo "CRITICAL : HTTP Content Check for $site!" >> $status_page
+                ok=0
+        fi
+fi
+	
 
 # Change status page if anything failed
 
